@@ -139,6 +139,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
     _focusNode.removeListener(_handleFocusChanged);
     if (null == widget.focusNode) {
       _focusNode.dispose();
+      _focusNode = null;
     }
 
     _suggestionsStreamController.close();
@@ -153,7 +154,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
   }
 
   void _handleFocusChanged() {
-    if (_focusNode.hasFocus) {
+    if (_focusNode != null && _focusNode.hasFocus) {
       _openInputConnection();
       _suggestionsBoxController.open();
     } else {
@@ -339,12 +340,14 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
       case TextInputAction.search:
         if (_suggestions != null && _suggestions.isNotEmpty) {
           selectSuggestion(_suggestions.first);
-        } else {
+        } else if (_focusNode != null) {
           _focusNode.unfocus();
         }
         break;
       default:
-        _focusNode.unfocus();
+        if (_focusNode != null) {
+          _focusNode.unfocus();
+        }
         break;
     }
   }
@@ -408,7 +411,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
             ),
             Flexible(
               flex: 0,
-              child: TextCursor(resumed: _focusNode.hasFocus),
+              child: TextCursor(resumed: _focusNode != null && _focusNode.hasFocus),
             ),
           ],
         ),
@@ -428,12 +431,14 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () {
-                FocusScope.of(context).requestFocus(_focusNode);
+                if (_focusNode != null) {
+                  FocusScope.of(context).requestFocus(_focusNode);
+                }
                 _textInputConnection?.show();
               },
               child: InputDecorator(
                 decoration: widget.decoration,
-                isFocused: _focusNode.hasFocus,
+                isFocused: _focusNode != null && _focusNode.hasFocus,
                 isEmpty: _value.text.isEmpty && _chips.isEmpty,
                 child: Wrap(
                   children: chipsChildren,
